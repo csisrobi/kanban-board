@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import BoardAPI from "./api/board";
 import UserAPI from "./api/user";
-import Example1 from "./containers/Example1";
-import Example2 from "./containers/Example2";
+import Board from "./containers/Board";
 import { Routes, Route } from "react-router-dom";
 
 const App = () => {
@@ -49,7 +48,7 @@ const App = () => {
     <div className="container">
       {/*create your own containers and components*/}
       <Routes>
-        <Route path="/" element={<Example1 />} />
+        <Route path="/" element={<Board />} />
       </Routes>
     </div>
   );
