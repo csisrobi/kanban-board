@@ -44,14 +44,7 @@ const App = () => {
     exampleOfMockAPI();
   }, []);
 
-  return (
-    <div className="container">
-      {/*create your own containers and components*/}
-      <Routes>
-        <Route path="/" element={<Board />} />
-      </Routes>
-    </div>
-  );
+  return <Board />;
 };
 
 export default App;
