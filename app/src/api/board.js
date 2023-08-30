@@ -1,66 +1,78 @@
-import {boardColumns} from './mockData';
-import { v4 as uuidv4 } from 'uuid';
+import { boardColumns } from "./mockData";
+import { v4 as uuidv4 } from "uuid";
 
 class BoardAPI {
-
   getBoardColumns = () =>
     new Promise((resolve, reject) => {
-      setTimeout(() => resolve({
-          status: 200,
-          data: JSON.parse(JSON.stringify(boardColumns))
-      }), 250);
+      setTimeout(
+        () =>
+          resolve({
+            status: 200,
+            data: JSON.parse(JSON.stringify(boardColumns)),
+          }),
+        250
+      );
     });
 
   createTask = (columnId, data) =>
     new Promise((resolve, reject) => {
-      if (!boardColumns.find(column => column.id === columnId)) {
-        reject(new Error('Column not found'));
+      if (!boardColumns.find((column) => column.id === columnId)) {
+        reject(new Error("Column not found"));
       }
       const id = uuidv4();
       const newTask = { id, ...data };
 
-      boardColumns.find(column => column.id === columnId).tasks.push(newTask)
+      boardColumns.find((column) => column.id === columnId).tasks.push(newTask);
 
-      setTimeout(() => resolve({
-          status: 201,
-          data: newTask
-      }), 250);
+      setTimeout(
+        () =>
+          resolve({
+            status: 201,
+            data: newTask,
+          }),
+        250
+      );
     });
 
   deleteTask = (id) =>
     new Promise((resolve, reject) => {
       let idFound = false;
-      for(const column of boardColumns) {
+      for (const column of boardColumns) {
         column.tasks = column.tasks.filter((task) => {
-          if(task.id === id) {
+          if (task.id === id) {
             idFound = true;
             return false;
-          }
-          else return true;
-        })
+          } else return true;
+        });
       }
-      if(idFound) return setTimeout(() => resolve({status: 204}), 250);
-      else return setTimeout(() => reject(new Error('Task not found'), 250));
+      if (idFound) return setTimeout(() => resolve({ status: 204 }), 250);
+      else return setTimeout(() => reject(new Error("Task not found"), 250));
     });
 
   editTask = (id, data) =>
     new Promise((resolve, reject) => {
       let idFound = false;
-      for(const column of boardColumns) {
+      for (const column of boardColumns) {
         column.tasks = column.tasks.map((task) => {
-          if(task.id === id) {
+          if (task.id === id) {
             idFound = true;
-            return {...data, id};
-          }
-          else return task;
-        })
+            return { ...data, id };
+          } else return task;
+        });
       }
-      if(idFound) return setTimeout(() => resolve({status: 200}), 250);
-      else return setTimeout(() => reject(new Error('Task not found'), 250));
+      if (idFound) return setTimeout(() => resolve({ status: 200 }), 250);
+      else return setTimeout(() => reject(new Error("Task not found"), 250));
     });
 
-
-
+  // it's needed so I can save the drag&drop =>
+  // after I finished the dropping of the element I override the API with the local state (where I save the movement of the task)
+  editBoard = (data) =>
+    new Promise((resolve, reject) => {
+      for (const [i, column] of boardColumns.entries()) {
+        column.tasks = data[i].tasks;
+      }
+      setTimeout(() => resolve({ status: 200, data: boardColumns }), 250);
+    });
 }
 
 export default new BoardAPI();

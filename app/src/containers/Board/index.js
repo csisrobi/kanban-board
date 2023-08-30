@@ -6,29 +6,40 @@ import {
   useSensors,
   PointerSensor,
 } from "@dnd-kit/core";
-import {
-  restrictToWindowEdges,
-  restrictToParentElement,
-} from "@dnd-kit/modifiers";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { createPortal } from "react-dom";
 import BoardAPI from "../../api/board";
 import UserAPI from "../../api/user";
 import { Column } from "../../components/Column";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Card } from "../../components/Card";
+import Card from "../../components/Card";
+import Toast from "../../components/Toast";
 import "./board.scss";
 
 const Board = () => {
   const [boardColumns, setBoardColumns] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeTask, setActiveTask] = useState(null);
-  useEffect(async () => {
-    const resBoard = await BoardAPI.getBoardColumns();
-    const resUsers = await UserAPI.getUsers();
+  const [toastMessage, setToastMessage] = useState(undefined);
 
-    setBoardColumns(resBoard.data);
-    setUsers(resUsers.data);
+  const fetchBoard = useCallback(async () => {
+    await BoardAPI.getBoardColumns()
+      .then((res) => setBoardColumns(res.data))
+      .catch((e) => setToastMessage(e.message));
   }, []);
+
+  const fetchUsers = useCallback(async () => {
+    await UserAPI.getUsers()
+      .then((res) => setUsers(res.data))
+      .catch((e) => setToastMessage(e.message));
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      await fetchUsers();
+      await fetchBoard();
+    })();
+  }, [fetchUsers, fetchBoard]);
 
   const moveCardToColumn = useCallback(
     (taskData, newColumnData, oldColumnId, overTaskData) => {
@@ -167,17 +178,27 @@ const Board = () => {
       moveCardToColumn(activeTask.task, newColumnData, columnId);
     }
   };
-
+  const onDragEnd = (event) => {
+    (async () => {
+      await BoardAPI.editBoard(boardColumns);
+    })();
+  };
   return (
     <div className="boardRoot">
       <DndContext
         sensors={sensors}
         onDragOver={onDragOver}
         onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
       >
         <div className="d-flex gap-3 m-auto">
           {boardColumns.map((boardColumn) => (
-            <Column key={boardColumn.id} column={boardColumn} users={users} />
+            <Column
+              key={boardColumn.id}
+              column={boardColumn}
+              users={users}
+              refetchData={fetchBoard}
+            />
           ))}
         </div>
         {createPortal(
@@ -189,6 +210,12 @@ const Board = () => {
           document.body
         )}
       </DndContext>
+      <Toast
+        show={!!toastMessage}
+        text={toastMessage}
+        onClose={() => setToastMessage(undefined)}
+        variant={"danger"}
+      />
     </div>
   );
 };
