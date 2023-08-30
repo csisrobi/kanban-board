@@ -30,6 +30,10 @@ const NewCardModal = ({
       importance,
     };
     handleSave(data);
+    setName("");
+    setDescription("");
+    setImportance(0);
+    setAssigned([]);
   };
   return (
     <Modal show={show} onHide={handleClose} centered>
