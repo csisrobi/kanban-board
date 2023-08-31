@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import BoardAPI from "../../api/board";
 import UserAPI from "../../api/user";
 import { Column } from "../../components/Column";
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/sortable";
 import Card from "../../components/Card";
 import Toast from "../../components/Toast";
 import "./board.scss";
@@ -124,7 +124,9 @@ const Board = () => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      activationConstraint: {
+        distance: 10,
+      },
     })
   );
 
