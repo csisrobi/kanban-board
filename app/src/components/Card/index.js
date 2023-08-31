@@ -1,38 +1,106 @@
-import React, { useState } from "react";
-import "./card.scss";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React, { useCallback, useContext, useRef, useState } from "react";
 import Card from "react-bootstrap/Card";
-import NewCardModal from "../../components/NewCardModal";
-import BoardAPI from "../../api/board";
-import { TrashIcon } from "../Icons/TrashIcon";
 import Button from "react-bootstrap/esm/Button";
+import { useDrag, useDrop } from "react-dnd";
+import BoardAPI from "../../api/board";
+import NewCardModal from "../../components/NewCardModal";
+import { BoardContext } from "../../containers/Board";
+import { TrashIcon } from "../Icons/TrashIcon";
 import Toast from "../Toast";
+import "./card.scss";
 
-const TaskCard = ({ task, users, columnId, refetchData }) => {
+const TaskCard = ({ task, columnId, refetchData, index }) => {
+  const { users, columns, setColumns } = useContext(BoardContext);
   const [showDialog, setShowDialog] = useState();
   const [saveInProgress, setSaveInProgress] = useState();
   const [cardHovered, setCardHovered] = useState(false);
   const [toastMessage, setToastMessage] = useState(undefined);
+  const ref = useRef();
 
-  const { importance, name, description, id, assigned } = task;
+  const { importance, name, id, assigned } = task;
   const assignees = assigned.map(
     (assignedUser) => users.find((user) => user.id === assignedUser).name
   );
-  const { setNodeRef, attributes, listeners, transition, transform } =
-    useSortable({
-      id,
-      data: {
-        type: "task",
-        task,
-        columnId,
-      },
-    });
-  const style = {
-    transition,
-    transform: CSS.Transform.toString(transform),
-  };
 
+  const sortCard = useCallback(
+    (
+      activeTaskData,
+      activeTaskIndex,
+      overTaskData,
+      overTaskIndex,
+      columnId
+    ) => {
+      setColumns((prevBoardColumns) => {
+        const columnBoardIndex = prevBoardColumns.findIndex(
+          (boardColumn) => boardColumn.id === columnId
+        );
+        const columnTasks = prevBoardColumns[columnBoardIndex].tasks;
+        const copyColumnTasks = columnTasks;
+        copyColumnTasks[overTaskIndex] = activeTaskData;
+        copyColumnTasks[activeTaskIndex] = overTaskData;
+
+        return prevBoardColumns.map((boardColumn) => {
+          if (boardColumn.id === columnId) {
+            return {
+              ...boardColumn,
+              tasks: copyColumnTasks,
+            };
+          }
+          return boardColumn;
+        });
+      });
+    },
+    [columns]
+  );
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: "card",
+      item: { task, columnId },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }),
+    [columns, columnId, task]
+  );
+  const [, drop] = useDrop(
+    () => ({
+      accept: "card",
+      hover(item, monitor) {
+        if (!ref.current) {
+          return;
+        }
+
+        const columnBoard = columns.find(
+          (boardColumn) => boardColumn.id === item.columnId
+        );
+        const columnTasks = columnBoard.tasks;
+
+        const dragIndex = columnTasks.findIndex((c) => c.id === item.task.id);
+        const hoverIndex = index;
+        if (
+          dragIndex < 0 ||
+          (dragIndex === hoverIndex && item.columnId === columnId) ||
+          item.task.id === task.id
+        ) {
+          return;
+        }
+        const hoverBoundingRect = ref.current?.getBoundingClientRect();
+        const hoverMiddleY =
+          (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const clientOffset = monitor.getClientOffset();
+        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+          return;
+        }
+        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+          return;
+        }
+        sortCard(item.task, dragIndex, task, hoverIndex, columnId);
+        item.index = hoverIndex;
+      },
+    }),
+    [columns, task, columnId, index]
+  );
   const handleClose = () => setShowDialog(false);
   const handleShow = () => setShowDialog(true);
   const handleSave = async (data) => {
@@ -55,17 +123,19 @@ const TaskCard = ({ task, users, columnId, refetchData }) => {
       .catch((e) => setToastMessage(e.message));
   };
 
+  drag(drop(ref));
+
+  const opacity = isDragging ? 0.5 : 1;
+
   return (
     <>
       <Card
-        ref={setNodeRef}
+        ref={ref}
         onClick={handleShow}
-        style={style}
+        style={{ opacity }}
         className={`importance-${importance}`}
         onMouseEnter={() => setCardHovered(true)}
         onMouseLeave={() => setCardHovered(false)}
-        {...attributes}
-        {...listeners}
       >
         <Card.Body>
           <Card.Title className="py-2">{name}</Card.Title>
@@ -90,7 +160,6 @@ const TaskCard = ({ task, users, columnId, refetchData }) => {
         handleClose={handleClose}
         handleSave={handleSave}
         saveInProgress={saveInProgress}
-        users={users}
         task={task}
       />
       <Toast

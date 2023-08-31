@@ -18,22 +18,20 @@ const NewCardModal = ({
     description: defaultDescription = "",
     importance: defaultImportance = 0,
   } = task;
-  const [name, setName] = useState(defaultName);
-  const [description, setDescription] = useState(defaultDescription);
-  const [assigned, setAssigned] = useState(defaultAssigned);
-  const [importance, setImportance] = useState(defaultImportance);
+  const [formState, setFormState] = useState({
+    name: defaultName,
+    description: defaultDescription,
+    assigned: defaultAssigned,
+    importance: defaultImportance,
+  });
   const onSubmit = () => {
-    const data = {
-      name,
-      description,
-      assigned,
-      importance,
-    };
-    handleSave(data);
-    setName("");
-    setDescription("");
-    setImportance(0);
-    setAssigned([]);
+    handleSave(formState);
+    setFormState({
+      name: "",
+      description: "",
+      assigned: [],
+      importance: 0,
+    });
   };
   return (
     <Modal show={show} onHide={handleClose} centered>
@@ -41,17 +39,7 @@ const NewCardModal = ({
         <Modal.Title>Add new task</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <CardDataForm
-          users={users}
-          name={name}
-          setName={setName}
-          description={description}
-          setDescription={setDescription}
-          assigned={assigned}
-          setAssigned={setAssigned}
-          importance={importance}
-          setImportance={setImportance}
-        />
+        <CardDataForm formState={formState} setFormState={setFormState} />
       </Modal.Body>
       <Modal.Footer>
         <Button
