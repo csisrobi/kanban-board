@@ -148,10 +148,12 @@ const TaskCard = ({ task, columnId, refetchData, index }) => {
           </Card.Text>
         </Card.Body>
         {cardHovered && (
-          <div className="position-absolute bottom-0 start-50 translate-middle-x my-1">
-            <Button onClick={handleDelete} variant="outline-danger" size="sm">
-              <TrashIcon />
-            </Button>
+          <div
+            onClick={handleDelete}
+            className="position-absolute"
+            style={{ top: 8, right: 8, cursor: "pointer" }}
+          >
+            <TrashIcon color="red" />
           </div>
         )}
       </Card>
