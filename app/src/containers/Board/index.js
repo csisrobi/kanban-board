@@ -38,16 +38,68 @@ const Board = () => {
     })();
   }, [fetchUsers, fetchBoard]);
 
+  const moveCardToColumn = useCallback(
+    (taskData, newColumnId, oldColumnId, overTaskData) => {
+      setColumns((prevColumns) => {
+        const oldColumnBoardIndex = prevColumns.findIndex(
+          (col) => col.id === oldColumnId
+        );
+        const newColumnBoardIndex = prevColumns.findIndex(
+          (col) => col.id === newColumnId
+        );
+
+        const oldColumnTasks = prevColumns[oldColumnBoardIndex].tasks;
+        const newColumnTasks = prevColumns[newColumnBoardIndex].tasks;
+
+        const newTaskListForOldColumn = oldColumnTasks.filter(
+          (task) => task.id !== taskData.id
+        );
+        let newTaskListForNewColumn;
+        if (overTaskData) {
+          const overColumnIndex = newColumnTasks.findIndex(
+            (col) => col.id === overTaskData.id
+          );
+          newTaskListForNewColumn = newColumnTasks.toSpliced(
+            overColumnIndex,
+            0,
+            taskData
+          );
+        } else {
+          newTaskListForNewColumn = [...newColumnTasks, taskData];
+        }
+        return prevColumns.map((col) => {
+          if (col.id === oldColumnId) {
+            return {
+              ...col,
+              tasks: newTaskListForOldColumn,
+            };
+          }
+          if (col.id === newColumnId) {
+            return {
+              ...col,
+              tasks: newTaskListForNewColumn,
+            };
+          }
+          return col;
+        });
+      });
+    },
+    [columns]
+  );
+
   return (
     <div className="boardRoot">
-      <BoardContext.Provider value={{ columns, setColumns, users, setUsers }}>
+      <BoardContext.Provider
+        value={{ columns, setColumns, users, setUsers, moveCardToColumn }}
+      >
         <DndProvider backend={HTML5Backend}>
           <div className="d-flex gap-3 m-auto">
-            {columns.map((column) => (
+            {columns.map((column, index) => (
               <Column
                 key={column.id}
                 column={column}
                 refetchData={fetchBoard}
+                index={index}
               />
             ))}
           </div>

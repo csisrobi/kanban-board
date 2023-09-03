@@ -1,6 +1,5 @@
 import React, { useCallback, useContext, useRef, useState } from "react";
 import Card from "react-bootstrap/Card";
-import Button from "react-bootstrap/esm/Button";
 import { useDrag, useDrop } from "react-dnd";
 import BoardAPI from "../../api/board";
 import NewCardModal from "../../components/NewCardModal";
@@ -10,7 +9,8 @@ import Toast from "../Toast";
 import "./card.scss";
 
 const TaskCard = ({ task, columnId, refetchData, index }) => {
-  const { users, columns, setColumns } = useContext(BoardContext);
+  const { users, columns, setColumns, moveCardToColumn } =
+    useContext(BoardContext);
   const [showDialog, setShowDialog] = useState();
   const [saveInProgress, setSaveInProgress] = useState();
   const [cardHovered, setCardHovered] = useState(false);
@@ -95,7 +95,12 @@ const TaskCard = ({ task, columnId, refetchData, index }) => {
         if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
           return;
         }
-        sortCard(item.task, dragIndex, task, hoverIndex, columnId);
+        if (item.columnId !== columnId) {
+          moveCardToColumn(item.task, columnId, item.columnId, task);
+          item.columnId = columnId;
+        } else {
+          sortCard(item.task, dragIndex, task, hoverIndex, columnId);
+        }
         item.index = hoverIndex;
       },
     }),
@@ -157,13 +162,15 @@ const TaskCard = ({ task, columnId, refetchData, index }) => {
           </div>
         )}
       </Card>
-      <NewCardModal
-        show={showDialog}
-        handleClose={handleClose}
-        handleSave={handleSave}
-        saveInProgress={saveInProgress}
-        task={task}
-      />
+      {showDialog && (
+        <NewCardModal
+          show
+          handleClose={handleClose}
+          handleSave={handleSave}
+          saveInProgress={saveInProgress}
+          task={task}
+        />
+      )}
       <Toast
         show={!!toastMessage}
         text={toastMessage}

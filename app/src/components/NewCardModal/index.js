@@ -9,7 +9,6 @@ const NewCardModal = ({
   handleClose,
   handleSave,
   saveInProgress,
-  users,
   task = {},
 }) => {
   const {
@@ -26,12 +25,6 @@ const NewCardModal = ({
   });
   const onSubmit = () => {
     handleSave(formState);
-    setFormState({
-      name: "",
-      description: "",
-      assigned: [],
-      importance: 0,
-    });
   };
   return (
     <Modal show={show} onHide={handleClose} centered>
